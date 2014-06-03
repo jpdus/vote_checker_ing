@@ -11,7 +11,7 @@ import time
 
 kategorie=2 #Kategore 1-4 von klein nach gross
 url="https://verein.ing-diba.de/kinder-und-jugend/example/example" #vereins page auf der ING seite
-check_intervall=dt.timedelta(hours=6) #intervall zwischen den abfragen
+check_intervall=dt.timedelta(hours=2) #intervall zwischen den abfragen
 from_adress="example@gmail.com"
 from_password="123456"
 to_adress=["example2@gmail.com"]
