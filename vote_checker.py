@@ -41,6 +41,10 @@ def check_votes():
 
 
 stimmen_250, stimmen_target=check_votes()
+text="Stimmen Platz 250: {}\nStimmen Eigener Verein: {}\nDifferenz: {}\n".format(stimmen_250,stimmen_target,stimmen_target-stimmen_250)
+subject="ING-Vote-Monitoring gestartet..."
+send_mail(from_adress,from_password,to_adress,text,subject,True)
+
 
 start=dt.datetime.today()+dt.timedelta(seconds=3)
 alerts=0
