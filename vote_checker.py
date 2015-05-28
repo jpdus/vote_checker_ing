@@ -22,31 +22,34 @@ to_adress=["example2@gmail.com"]
 kategorie-=1
 
 def check_votes():
-    votes_250 = urllib2.urlopen('https://verein.ing-diba.de/club/presentation/search/page/50/category//clubname//location//size//order/rank/direction/ASC')
-    html_250 = votes_250.read()
+    votes_200 = urllib2.urlopen('https://verein.ing-diba.de/club/presentation/search/page/40/category//clubname//location//size//order/rank/direction/ASC')
+    html_200 = votes_200.read()
 
-    abschnitt=re.findall("<li>Stimmen: \d\.?\d*</li>\s*<li>Rang: 250</li>", html_250)
-    stimmen_250=re.findall('Stimmen: \d\.?\d*',abschnitt[kategorie])[0][-5:]
-    stimmen_250=int(stimmen_250.replace(".",""))
+    abschnitt=re.findall("<li>Stimmen: \d\.?\d*</li>\s*<li>Rang: 200</li>", html_200)
+    stimmen_200=re.findall('Stimmen: \d\.?\d*',abschnitt[kategorie])[0][-5:]
+    stimmen_200=int(stimmen_200.replace(":",""))
 
     votes_target = urllib2.urlopen(url)
     html_target= votes_target.read()
-    abschnitt2=re.findall('Stimmen.*<span class="headline">Mitglieder<br />26 - 75</span>',html_target, re.DOTALL)[0]
-    stimmen_target=re.findall('<h2 class="xl">.*</h2>',abschnitt2)[0][-10:-5]
-    stimmen_target=int(stimmen_target.replace(".",""))
-    print "Stimmen Platz 250: %s" %stimmen_250
-    print "Stimmen Eigener Verein: %s" %stimmen_target
-    print "Differenz: %s" %(stimmen_target-stimmen_250)
-    return stimmen_250, stimmen_target
+    stimmen_target=re.findall('Stimmen: \d\.?\d*',html_target)[0][-5:]
+    stimmen_target=int(stimmen_target.replace(":",""))
+    #print "Stimmen Platz 200: %s" %stimmen_200
+    #print "Stimmen Eigener Verein: %s" %stimmen_target
+    #print "Differenz: %s" %(stimmen_target-stimmen_200)
+    with open('log.txt','a') as logfile:
+        logfile.write('{},{},{},{}\n'.format(dt.datetime.today(),stimmen_200,stimmen_target,stimmen_target-stimmen_200))
+    print logfile.closed
+    return stimmen_200, stimmen_target
 
 
-stimmen_250, stimmen_target=check_votes()
-text="Stimmen Platz 250: {}\nStimmen Eigener Verein: {}\nDifferenz: {}\n".format(stimmen_250,stimmen_target,stimmen_target-stimmen_250)
+stimmen_200, stimmen_target=check_votes()
+text="Stimmen Platz 200: {}\nStimmen Eigener Verein: {}\nDifferenz: {}\n".format(stimmen_200,stimmen_target,stimmen_target-stimmen_200)
 subject="ING-Vote-Monitoring gestartet..."
-send_mail(from_adress,from_password,to_adress,text,subject,True)
+#send_mail(from_adress,from_password,to_adress,text,subject,True)
 
 
 start=dt.datetime.today()+dt.timedelta(seconds=3)
+nextalert=start+dt.timedelta(hours=24)
 alerts=0
 
 while True:
@@ -55,13 +58,15 @@ while True:
         alertsold=alerts
         print dt.datetime.today()
         try:
-            stimmen_250, stimmen_target=check_votes()
-            if stimmen_target<stimmen_250-20:
+            stimmen_200, stimmen_target=check_votes()
+            if stimmen_target<stimmen_200-20:
                 print "Too few votes, gogogo!"
-                text="Stimmen Platz 250: {}\nStimmen Eigener Verein: {}\nDifferenz: {}\n".format(stimmen_250,stimmen_target,stimmen_target-stimmen_250)
+                text="Stimmen Platz 200: {}\nStimmen Eigener Verein: {}\nDifferenz: {}\n".format(stimmen_200,stimmen_target,stimmen_target-stimmen_200)
+                print text
                 subject="Alert: too few Votes at ING!"
-                send_mail(from_adress,from_password,to_adress,text,subject,True)
-                alerts+=1
+                if now>=nextalert:
+                    send_mail(from_adress,from_password,to_adress,text,subject,True)
+                    alerts+=1
             else:
                 print "Vote difference big enough - waiting..."
         except urllib2.URLError:
@@ -72,6 +77,6 @@ while True:
             alerts+=1
         start=now+check_intervall
         if alerts!=alertsold:
-            check_intervall+=dt.timedelta(hours=6)
+            nextalert+=dt.timedelta(hours=24)
     time.sleep(1)
 
