@@ -3,23 +3,27 @@ __author__ = 'jph'
 import urllib2
 import re
 import datetime as dt
-from sendmail import send_mail
 import time
+
+from sendmail import send_mail
+import gspreadsheet
+
 
 ###############################################
 #Settings:
 
-kategorie=2 #Kategore 1-4 von klein nach gross
+kategorie = 3  # Kategore 1-4 von klein nach gross
 url="https://verein.ing-diba.de/kinder-und-jugend/example/example" #vereins page auf der ING seite
-check_intervall=dt.timedelta(hours=2) #intervall zwischen den abfragen
+check_intervall = dt.timedelta(minutes=30)  #intervall zwischen den abfragen
 from_adress="example@gmail.com"
 from_password="123456"
 to_adress=["example2@gmail.com"]
 
+
 ###############################################
 
-
 kategorie-=1
+
 
 def check_votes():
     votes_200 = urllib2.urlopen('https://verein.ing-diba.de/club/presentation/search/page/40/category//clubname//location//size//order/rank/direction/ASC')
@@ -36,15 +40,18 @@ def check_votes():
     #print "Stimmen Platz 200: %s" %stimmen_200
     #print "Stimmen Eigener Verein: %s" %stimmen_target
     #print "Differenz: %s" %(stimmen_target-stimmen_200)
-    with open('log.txt','a') as logfile:
-        logfile.write('{},{},{},{}\n'.format(dt.datetime.today(),stimmen_200,stimmen_target,stimmen_target-stimmen_200))
-    print logfile.closed
+
     return stimmen_200, stimmen_target
 
 
+spread = gspreadsheet.Google_Spreadsheet2(spreadsheet="ING_Pfadfinder")
+
+
 stimmen_200, stimmen_target=check_votes()
+spread.write_log(dt.datetime.today(), stimmen_200, stimmen_target, stimmen_target - stimmen_200)
 text="Stimmen Platz 200: {}\nStimmen Eigener Verein: {}\nDifferenz: {}\n".format(stimmen_200,stimmen_target,stimmen_target-stimmen_200)
-subject="ING-Vote-Monitoring gestartet..."
+print text
+#subject="ING-Vote-Monitoring gestartet..."
 #send_mail(from_adress,from_password,to_adress,text,subject,True)
 
 
@@ -59,6 +66,10 @@ while True:
         print dt.datetime.today()
         try:
             stimmen_200, stimmen_target=check_votes()
+            spread.write_log(dt.datetime.today(), stimmen_200, stimmen_target, stimmen_target - stimmen_200)
+            with open('log.txt', 'a') as logfile:
+                logfile.write('{},{},{},{} \n'.format(dt.datetime.today(), stimmen_200, stimmen_target,
+                                                      stimmen_target - stimmen_200))
             if stimmen_target<stimmen_200-20:
                 print "Too few votes, gogogo!"
                 text="Stimmen Platz 200: {}\nStimmen Eigener Verein: {}\nDifferenz: {}\n".format(stimmen_200,stimmen_target,stimmen_target-stimmen_200)
